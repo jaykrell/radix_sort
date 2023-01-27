@@ -138,8 +138,6 @@ private:
         return (value / power) % Base;
     }
 
-    std::vector<T> temp;
-
     void helper(
         T* data,
         T* temp,
