@@ -87,7 +87,6 @@ public:
     std::vector<T> operator()(Iterator begin, Iterator end)
     {
         // To limit copying, two temporaries repeatedly swap roles.
-        // Is it possible to further reduce copying?
         std::vector<T> copy(begin, end);
         auto const size{copy.size()};
         if (size < 2)
