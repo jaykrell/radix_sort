@@ -427,26 +427,15 @@ int main()
             for (int index = 0; index < size; ++index)
                 data[index] = (0x7fffffff & rand());
 
-            {
-                constexpr int Base = 2;
-                TestRadixSorter<int, Base> test_sort;
-                test_sort(reverse, data, &data[size]);
-            }
-            {
-                constexpr int Base = 3;
-                TestRadixSorter<int, Base> test_sort;
-                test_sort(reverse, data, &data[size]);
-            }
-            {
-                constexpr int Base = 10;
-                TestRadixSorter<int, Base> test_sort;
-                test_sort(reverse, data, &data[size]);
-            }
-            {
-                constexpr int Base = 20;
-                TestRadixSorter<int, Base> test_sort;
-                test_sort(reverse, data, &data[size]);
-            }
+            TestRadixSorter<int, 2>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 3>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 4>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 5>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 10>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 16>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 20>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 100>()(reverse, data, &data[size]);
+            TestRadixSorter<int, 256>()(reverse, data, &data[size]);
         }
     }
 }
