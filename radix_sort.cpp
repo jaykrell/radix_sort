@@ -1,3 +1,4 @@
+#include <array>
 #include <ctype.h>
 #include <algorithm>
 #include <assert.h>
@@ -64,8 +65,10 @@ private:
         if (size < 2 || power < 1)
             return;
 
-        size_t positions[Base]{};
-        size_t counts[Base]{};
+        using array = std::array<size_t, Base>;
+
+        array positions{};
+        array counts{};
         size_t i {};
         size_t position{};
 
@@ -81,9 +84,7 @@ private:
         }
 
         {
-            size_t current_position[Base]{};
-
-            memcpy(current_position, positions, sizeof(positions));
+            auto current_position = positions;
 
             // place them in ranges
             for (i = 0; i < size; ++i)
