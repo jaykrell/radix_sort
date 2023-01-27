@@ -157,6 +157,7 @@ private:
             }
         }
 
+        // TODO: Reduce copying by swapping data and temp. oscillating.
         std::copy(temp.begin(), temp.begin() + size, data);
 
         if (power == 1)
