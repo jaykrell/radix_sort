@@ -4,7 +4,7 @@
 // See https://en.wikipedia.org/wiki/Radix_sort
 //
 // This is original work by Jay Krell (jay.krell@cornell.edu),
-// though many hints were provided and Wikipedia consulted.
+// though hints were provided and Wikipedia consulted somewhat.
 // It was an intellectual exercise. Whether radix sort is actually
 // useful, I do not know yet.
 //
