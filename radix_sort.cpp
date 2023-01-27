@@ -25,7 +25,8 @@
 // 1:00 is to base 60 as "100" or "60" is to base 10.
 //
 // Base 2 is natural in computers because of how transistors work.
-// Base 16 is essentially a shorthand for base.
+// Base 16 is essentially a shorthand for base 2. Every 4 binary
+// digits ("bits") become one hexadecimal digit ("nibble").
 // Base64 is used to encode "binary" files as text, using
 // "digits" a through z, A through Z, 0 through 9 and a few more.
 //
@@ -50,6 +51,13 @@
 //
 // Each bucket is then sorted in the same way, using the next digit.
 // The current implementation is recursive and serial.
+// Two temporaries can be swapped repeatedly to limit copying.
+// Perhaps copying can be further reduced.
+//
+// One progression would be:
+//  22 23 21  32 33 31  12 13 11 original input with ups and downs in both digits.
+//  12 13 11  22 23 21  32 33 31 sorted in first digit
+//  11 12 13  21 22 23  31 32 33 sorted in both digits
 //
 #include <array>
 #include <ctype.h>
