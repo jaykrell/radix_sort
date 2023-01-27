@@ -5,11 +5,14 @@
 #include <stdio.h>
 #include <vector>
 
-// T is for temporary data.
-// The sorted data can be a different type.
-// The interactions of type, sorted type, sorted values,
+// T is type for temporary and sorted output data.
+// The input data can be a different type.
+// The interactions of output type, input type, values,
 // and base is complex and some combinations do not work,
 // e.g. divide by zero.
+//
+// TODO: Also, negative numbers do not work.
+//
 template <typename T, size_t Base>
 class RadixSorter
 {
@@ -18,7 +21,7 @@ public:
     std::vector<T> operator()(Iterator begin, Iterator end)
     {
         std::vector<T> copy(begin, end);
-        auto const size = copy.size();
+        auto const size{copy.size()};
         temp.resize(size);
         helper(&copy[0], size, get_power(get_max_digits(copy.begin(), copy.end())));
         return copy;
@@ -41,7 +44,7 @@ private:
     static unsigned get_max_digits(Iterator begin, Iterator end) // log
     {
         // TODO: There is a nicer way, e.g. std::accumulate
-        unsigned value {1};
+        unsigned value{1};
         for (auto it{begin}; it != end; ++it)
             value = std::max(value, get_digits(*it));
         return value;
@@ -131,7 +134,7 @@ void verbose(Iterator begin, Iterator end, bool success = true)
 template <typename Iterator>
 void check(Iterator begin, Iterator end)
 {
-    auto previous = begin;
+    auto previous{begin};
     for (auto it{begin}; it != end; ++it)
     {
         if (it != begin)
@@ -148,7 +151,7 @@ void check(Iterator begin, Iterator end)
 int main()
 {
     {
-        constexpr int Base = 10;
+        constexpr int Base{10};
         RadixSorter<int, Base> sort;
         assert(sort.get_digit(1234, 1) == 4);
         assert(sort.get_digit(1234, 10) == 3);
@@ -162,7 +165,7 @@ int main()
         assert(sort.get_digits(1234) == 4);
     }
 
-    constexpr int Base = 10;
+    constexpr int Base{10};
     RadixSorter<int, Base> sort;
 
     {
@@ -187,6 +190,14 @@ int main()
         auto sorted = sort(data.begin(), data.end());
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
+    }
+
+    {
+        printf("\nline:%d\n", __LINE__);
+        //std::vector<int> data{9,-8,7,-1,2,-3,1000,-100,1234,-5678,1234,-5678};
+        //auto sorted = sort(data.begin(), data.end());
+        //verbose(sorted.begin(), sorted.end());
+        //check(sorted.begin(), sorted.end());
     }
 
     {
