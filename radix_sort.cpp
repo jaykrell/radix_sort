@@ -77,6 +77,7 @@
 // e.g. divide by zero.
 //
 // TODO: Also, negative numbers do not work.
+// This class is stateless, so a template function suffices.
 //
 template <typename T, size_t Base>
 class RadixSorter
@@ -139,7 +140,7 @@ private:
         return (value / power) % Base;
     }
 
-    void helper(
+    static void helper(
         T* data,
         T* temp,
         size_t size,
