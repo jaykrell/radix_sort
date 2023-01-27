@@ -51,8 +51,8 @@
 //
 // Each bucket is then sorted in the same way, using the next digit.
 // The current implementation is recursive and serial.
-// Two temporaries can be swapped repeatedly to limit copying.
-// Perhaps copying can be further reduced.
+// Two temporaries are swapped repeatedly to limit copying.
+//
 // Making it non-recursive, without mere queuing, was attempted
 // but appears difficult or impossible. Of course, queueing is easy enough.
 // There is a sort of "arbitrary fan out" or tree to the recursion.
@@ -68,6 +68,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <vector>
+#include <time.h>
 
 // T is type for temporary and sorted output data.
 // The input data can be a different type.
@@ -92,7 +93,7 @@ public:
             return copy;
         std::vector<T> temp(size);
         auto const max_digits = get_max_digits(copy.begin(), copy.end());
-        helper(&copy[0], &temp[0], size, get_power(max_digits));
+        helper(&copy[0], &temp[0], size, max_digits, get_power(max_digits));
 
         // max_digits determines recursion depth, determines number
         // of times data and temp have swapped.
@@ -142,6 +143,7 @@ private:
         T* data,
         T* temp,
         size_t size,
+        unsigned max_digits,
         T power)
     {
         if (size >= 2 && power >= 1)
@@ -186,14 +188,20 @@ private:
                 for (i = 0; i < Base; ++i)
                 {
                     auto const offset = positions[i];
-                    helper(temp + offset, data + offset, counts[i], power / Base);
+                    helper(temp + offset, data + offset, counts[i], max_digits - 1, power / Base);
                 }
             }
         }
         else
         {
-            // TODO: Can this be eliminated?
-            std::copy(data, data + size, temp);
+            // Recursion depth is limited to max_digits, but also stops when size==1.
+            // Copy is needed if size==1 an odd number of times before the maximum recursion.
+            // That is, we could recurse till max_digits == 0, but that would only
+            // move elements back and forth between data and temp. Instead, do one
+            // last move and stop recursing. Well, odd vs. even is empirically derived,
+            // to fix off by one.
+            if (!(max_digits & 1))
+                std::copy(data, data + size, temp);
         }
     }
     
@@ -212,7 +220,8 @@ public:
 
         auto const sorted = RadixSorter<T, Base>::operator()(begin, end);
         assert(sorted.size() == (end - begin));
-        verbose(sorted.begin(), sorted.end());
+        if (sorted.size() <= 10)
+            verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
         return sorted;
     }
@@ -406,6 +415,42 @@ int main()
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
+        }
+
+        srand(static_cast<unsigned>(time(0)));
+
+        // random data
+        printf("\nline:%d\n", __LINE__);
+        for (int size = 0; size < 999; ++size)
+        {
+            int data[999]{};
+            for (int index = 0; index < size; ++index)
+                data[index] = (0x7fffffff & rand());
+
+            {
+                constexpr int Base = 2;
+                TestRadixSorter<int, Base> test_sort;
+                auto const sorted = test_sort(reverse, data, &data[size]);
+                assert(sorted.size() == size);
+            }
+            {
+                constexpr int Base = 3;
+                TestRadixSorter<int, Base> test_sort;
+                auto const sorted = test_sort(reverse, data, &data[size]);
+                assert(sorted.size() == size);
+            }
+            {
+                constexpr int Base = 10;
+                TestRadixSorter<int, Base> test_sort;
+                auto const sorted = test_sort(reverse, data, &data[size]);
+                assert(sorted.size() == size);
+            }
+            {
+                constexpr int Base = 20;
+                TestRadixSorter<int, Base> test_sort;
+                auto const sorted = test_sort(reverse, data, &data[size]);
+                assert(sorted.size() == size);
+            }
         }
     }
 }
