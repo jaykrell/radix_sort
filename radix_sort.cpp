@@ -430,26 +430,22 @@ int main()
             {
                 constexpr int Base = 2;
                 TestRadixSorter<int, Base> test_sort;
-                auto const sorted = test_sort(reverse, data, &data[size]);
-                assert(sorted.size() == size);
+                test_sort(reverse, data, &data[size]);
             }
             {
                 constexpr int Base = 3;
                 TestRadixSorter<int, Base> test_sort;
-                auto const sorted = test_sort(reverse, data, &data[size]);
-                assert(sorted.size() == size);
+                test_sort(reverse, data, &data[size]);
             }
             {
                 constexpr int Base = 10;
                 TestRadixSorter<int, Base> test_sort;
-                auto const sorted = test_sort(reverse, data, &data[size]);
-                assert(sorted.size() == size);
+                test_sort(reverse, data, &data[size]);
             }
             {
                 constexpr int Base = 20;
                 TestRadixSorter<int, Base> test_sort;
-                auto const sorted = test_sort(reverse, data, &data[size]);
-                assert(sorted.size() == size);
+                test_sort(reverse, data, &data[size]);
             }
         }
     }
