@@ -96,7 +96,7 @@ private:
             }
         }
 
-        std::copy(temp.begin(), temp.end(), data);
+        std::copy(temp.begin(), temp.begin() + size, data);
 
         if (power == 1)
             return;
