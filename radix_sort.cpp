@@ -229,9 +229,9 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 8;
         RadixSorter<short, Base> sort;
-        unsigned char data[] = {'f','o','o','b','a','r'};
-        auto sorted = sort(data, &data[sizeof(data) / sizeof(data[0])]);
-        assert(sorted.size() == 6);
+        char data[] = "foobar";
+        auto sorted = sort(data, std::end(data));
+        assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
@@ -240,9 +240,9 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 9;
         RadixSorter<short, Base> sort;
-        unsigned char data[] = {'f','o','o','b','a','r'};
-        auto sorted = sort(data, &data[sizeof(data) / sizeof(data[0])]);
-        assert(sorted.size() == 6);
+        char data[] = "foobar";
+        auto sorted = sort(data, std::end(data));
+        assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
@@ -251,9 +251,9 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 10;
         RadixSorter<short, Base> sort;
-        unsigned char data[] = {'f','o','o','b','a','r'};
-        auto sorted = sort(data, &data[sizeof(data) / sizeof(data[0])]);
-        assert(sorted.size() == 6);
+        char data[] = "foobar";
+        auto sorted = sort(data, std::end(data));
+        assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
