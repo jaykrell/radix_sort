@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <vector>
 
+// T is for temporary data.
+// The sorted data can be a different type.
+// The interactions of type, sorted type, sorted values,
+// and base is complex and some combinations do not work,
+// e.g. divide by zero.
 template <typename T, size_t Base>
 class RadixSorter
 {
@@ -13,9 +18,9 @@ public:
     std::vector<T> operator()(Iterator begin, Iterator end)
     {
         std::vector<T> copy(begin, end);
-        const size_t size = copy.size();
+        auto const size = copy.size();
         temp.resize(size);
-        helper(&copy[0], size, get_power(get_max_digits(begin, end)));
+        helper(&copy[0], size, get_power(get_max_digits(copy.begin(), copy.end())));
         return copy;
     }
 
@@ -23,7 +28,7 @@ private:
 
     static unsigned get_digits(T value)
     {
-        unsigned digits = 1;
+        unsigned digits{1};
         while (value >= Base)
         {
             value /= Base;
@@ -37,7 +42,7 @@ private:
     {
         // TODO: There is a nicer way, e.g. std::accumulate
         unsigned value {1};
-        for (auto it = begin; it < end; ++it)
+        for (auto it{begin}; it != end; ++it)
             value = std::max(value, get_digits(*it));
         return value;
     }
@@ -69,7 +74,7 @@ private:
 
         array positions{};
         array counts{};
-        size_t i {};
+        size_t i{};
         size_t position{};
 
         // count them
@@ -118,7 +123,7 @@ void verbose(Iterator begin, Iterator end, bool success = true)
     };
 
     if (!success) printf("%s\n", success ? "success" : "failed");
-    for (auto it = begin; it < end; ++it)
+    for (auto it{begin}; it != end; ++it)
         printf("%d %c ", (int)*it, ToChar(*it));
     assert(success);
 }
@@ -127,7 +132,7 @@ template <typename Iterator>
 void check(Iterator begin, Iterator end)
 {
     auto previous = begin;
-    for (auto it = begin; it < end; ++it)
+    for (auto it{begin}; it != end; ++it)
     {
         if (it != begin)
         {
@@ -200,12 +205,18 @@ int main()
         check(sorted.begin(), sorted.end());
     }
 
+    // Some bases/types/values interact poorly.
+    // For example in base 4, the value 64 cannot represent
+    // lower case letters, but the next value
+    // is 256 which overflows unsigned char to zero.
+
     {
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 2;
-        RadixSorter<char, Base> sort;
-        char data[] = {'f','o','o','b','a','r'};
-        auto sorted = sort(data, data + 1);
+        RadixSorter<short, Base> sort;
+        char data[] = "foobar";
+        auto sorted = sort(data, std::end(data));
+        assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
@@ -213,17 +224,13 @@ int main()
     {
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 3;
-        RadixSorter<char, Base> sort;
-        char data[] = {'f','o','o','b','a','r'};
-        auto sorted = sort(data, data + 1);
+        RadixSorter<short, Base> sort;
+        unsigned char data[] = "foobar";
+        auto sorted = sort(data, std::end(data));
+        assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
-
-    // Some bases/types/values interact poorly.
-    // For example in base 4, the value 64 cannot represent
-    // lower case letters, but the next value
-    // is 256 which overflows unsigned char to zero.
 
     {
         printf("\nline:%d\n", __LINE__);
