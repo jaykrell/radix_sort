@@ -223,23 +223,23 @@ int main()
 
     {
         printf("\nline:%d\n", __LINE__);
-        std::vector<int> data{1,2,3,4,5,6,7,8,9,10,11,12};
-        auto sorted = sort(data.begin(), data.end());
+        const std::vector<int> data{1,2,3,4,5,6,7,8,9,10,11,12};
+        auto const sorted = sort(data.begin(), data.end());
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
 
     {
         printf("\nline:%d\n", __LINE__);
-        std::vector<int> data{1,2,3,4,5,6,7,8,9,10,12,11};
-        auto sorted = sort(data.begin(), data.end());
+        const std::vector<int> data{1,2,3,4,5,6,7,8,9,10,12,11};
+        auto const sorted = sort(data.begin(), data.end());
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
 
     {
         printf("\nline:%d\n", __LINE__);
-        std::vector<int> data{9,8,7,1,2,3,1000,100,1234,5678,1234,5678};
+        const std::vector<int> data{9,8,7,1,2,3,1000,100,1234,5678,1234,5678};
         auto sorted = sort(data.begin(), data.end());
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
@@ -255,16 +255,16 @@ int main()
 
     {
         printf("\nline:%d\n", __LINE__);
-        std::vector<int> data{9,8,7,1,2,3,100,1000,1234,5678,1234,5678};
-        auto sorted = sort(data.begin(), data.end());
+        const std::vector<int> data{9,8,7,1,2,3,100,1000,1234,5678,1234,5678};
+        auto const sorted = sort(data.begin(), data.end());
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
 
     {
         printf("\nline:%d\n", __LINE__);
-        std::vector<int> data{9,8,7,1,2,2234,3,100,1000,1234,5678,1234,5678};
-        auto sorted = sort(data.begin(), data.end());
+        const std::vector<int> data{9,8,7,1,2,2234,3,100,1000,1234,5678,1234,5678};
+        auto const sorted = sort(data.begin(), data.end());
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
     }
@@ -278,8 +278,8 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 2;
         RadixSorter<short, Base> sort;
-        char data[] = "foobar";
-        auto sorted = sort(data, std::end(data));
+        static constexpr char data[] = "foobar";
+        auto const sorted = sort(data, std::end(data));
         assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
@@ -289,8 +289,8 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 3;
         RadixSorter<short, Base> sort;
-        unsigned char data[] = "foobar";
-        auto sorted = sort(data, std::end(data));
+        static constexpr char data[] = "foobar";
+        auto const sorted = sort(data, std::end(data));
         assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
@@ -300,8 +300,8 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 8;
         RadixSorter<short, Base> sort;
-        char data[] = "foobar";
-        auto sorted = sort(data, std::end(data));
+        static constexpr char data[] = "foobar";
+        auto const sorted = sort(data, std::end(data));
         assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
@@ -311,8 +311,8 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 9;
         RadixSorter<short, Base> sort;
-        char data[] = "foobar";
-        auto sorted = sort(data, std::end(data));
+        static constexpr char data[] = "foobar";
+        auto const sorted = sort(data, std::end(data));
         assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
@@ -322,8 +322,8 @@ int main()
         printf("\nline:%d\n", __LINE__);
         constexpr int Base = 10;
         RadixSorter<short, Base> sort;
-        char data[] = "foobar";
-        auto sorted = sort(data, std::end(data));
+        static constexpr char data[] = "foobar";
+        auto const sorted = sort(data, std::end(data));
         assert(sorted.size() == 7);
         verbose(sorted.begin(), sorted.end());
         check(sorted.begin(), sorted.end());
