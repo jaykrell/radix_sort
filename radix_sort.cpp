@@ -171,36 +171,54 @@ private:
     friend int main();
 };
 
-template <typename Iterator>
-void verbose(Iterator begin, Iterator end, bool success = true)
+template <typename T, size_t Base>
+class TestRadixSorter : RadixSorter<T, Base>
 {
-    auto ToChar = [](int a)
+public:
+    template <typename Iterator>
+    std::vector<T> operator()(bool reverse, Iterator begin, Iterator end)
     {
-        return isprint(a) ? a : '?';
-    };
+        if (reverse)
+            std::reverse(begin, end);
 
-    if (!success) printf("%s\n", success ? "success" : "failed");
-    for (auto it{begin}; it != end; ++it)
-        printf("%d %c ", (int)*it, ToChar(*it));
-    assert(success);
-}
+        auto const sorted = RadixSorter<T, Base>::operator()(begin, end);
+        assert(sorted.size() == (end - begin));
+        verbose(sorted.begin(), sorted.end());
+        check(sorted.begin(), sorted.end());
+        return sorted;
+    }
 
-template <typename Iterator>
-void check(Iterator begin, Iterator end)
-{
-    auto previous{begin};
-    for (auto it{begin}; it != end; ++it)
+    template <typename Iterator>
+    void verbose(Iterator begin, Iterator end, bool success = true)
     {
-        if (it != begin)
+        auto ToChar = [](int a)
         {
-            if (!(*previous++ <= *it))
+            return isprint(a) ? a : '?';
+        };
+
+        if (!success) printf("%s\n", success ? "success" : "failed");
+        for (auto it{begin}; it != end; ++it)
+            printf("%d %c ", (int)*it, ToChar(*it));
+        assert(success);
+    }
+
+    template <typename Iterator>
+    void check(Iterator begin, Iterator end)
+    {
+        auto previous{begin};
+        for (auto it{begin}; it != end; ++it)
+        {
+            if (it != begin)
             {
-                verbose(begin, end, false);
-                return;
+                if (!(*previous++ <= *it))
+                {
+                    verbose(begin, end, false);
+                    return;
+                }
             }
         }
     }
-}
+};
 
 int main()
 {
@@ -220,113 +238,145 @@ int main()
     }
 
     constexpr int Base{10};
-    RadixSorter<int, Base> sort;
+    TestRadixSorter<int, Base> test_sort;
 
+    for (int reverse = 0; reverse <= 1; ++reverse)
     {
-        printf("\nline:%d\n", __LINE__);
-        const std::vector<int> data{1,2,3,4,5,6,7,8,9,10,11,12};
-        auto const sorted = sort(data.begin(), data.end());
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{2,3,1};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        const std::vector<int> data{1,2,3,4,5,6,7,8,9,10,12,11};
-        auto const sorted = sort(data.begin(), data.end());
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        const std::vector<int> data{9,8,7,1,2,3,1000,100,1234,5678,1234,5678};
-        auto sorted = sort(data.begin(), data.end());
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3,11,22};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        //std::vector<int> data{9,-8,7,-1,2,-3,1000,-100,1234,-5678,1234,-5678};
-        //auto sorted = sort(data.begin(), data.end());
-        //verbose(sorted.begin(), sorted.end());
-        //check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3,22,11};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        const std::vector<int> data{9,8,7,1,2,3,100,1000,1234,5678,1234,5678};
-        auto const sorted = sort(data.begin(), data.end());
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3,11,22,333,444};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        const std::vector<int> data{9,8,7,1,2,2234,3,100,1000,1234,5678,1234,5678};
-        auto const sorted = sort(data.begin(), data.end());
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3,11,5555,22,333,444};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    // Some bases/types/values interact poorly.
-    // For example in base 4, the value 64 cannot represent
-    // lower case letters, but the next value
-    // is 256 which overflows unsigned char to zero.
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{22,23,21, 32,33,31, 12,13,11};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        constexpr int Base = 2;
-        RadixSorter<short, Base> sort;
-        static constexpr char data[] = "foobar";
-        auto const sorted = sort(data, std::end(data));
-        assert(sorted.size() == 7);
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{222,323,121, 232,333,131, 212,313,111};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        constexpr int Base = 3;
-        RadixSorter<short, Base> sort;
-        static constexpr char data[] = "foobar";
-        auto const sorted = sort(data, std::end(data));
-        assert(sorted.size() == 7);
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        constexpr int Base = 8;
-        RadixSorter<short, Base> sort;
-        static constexpr char data[] = "foobar";
-        auto const sorted = sort(data, std::end(data));
-        assert(sorted.size() == 7);
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3,4,5,6,7,8,9,10,11,12};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        constexpr int Base = 9;
-        RadixSorter<short, Base> sort;
-        static constexpr char data[] = "foobar";
-        auto const sorted = sort(data, std::end(data));
-        assert(sorted.size() == 7);
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
-    }
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{1,2,3,4,5,6,7,8,9,10,12,11};
+            test_sort(reverse, data.begin(), data.end());
+        }
 
-    {
-        printf("\nline:%d\n", __LINE__);
-        constexpr int Base = 10;
-        RadixSorter<short, Base> sort;
-        static constexpr char data[] = "foobar";
-        auto const sorted = sort(data, std::end(data));
-        assert(sorted.size() == 7);
-        verbose(sorted.begin(), sorted.end());
-        check(sorted.begin(), sorted.end());
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{9,8,7,1,2,3,1000,100,1234,5678,1234,5678};
+            test_sort(reverse, data.begin(), data.end());
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            //std::vector<int> data{9,-8,7,-1,2,-3,1000,-100,1234,-5678,1234,-5678};
+            //auto sorted = test_sort(reverse, data.begin(), data.end());
+            //verbose(sorted.begin(), sorted.end());
+            //check(sorted.begin(), sorted.end());
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{9,8,7,1,2,3,100,1000,1234,5678,1234,5678};
+            test_sort(reverse, data.begin(), data.end());
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            std::vector<int> data{9,8,7,1,2,2234,3,100,1000,1234,5678,1234,5678};
+            test_sort(reverse, data.begin(), data.end());
+        }
+
+        // Some bases/types/values interact poorly.
+        // For example in base 4, the value 64 cannot represent
+        // lower case letters, but the next value
+        // is 256 which overflows unsigned char to zero.
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 2;
+            TestRadixSorter<short, Base> test_sort;
+            char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 3;
+            TestRadixSorter<short, Base> test_sort;
+            char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 8;
+            TestRadixSorter<short, Base> test_sort;
+            char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 9;
+            TestRadixSorter<short, Base> test_sort;
+            char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 10;
+            TestRadixSorter<short, Base> test_sort;
+            char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
     }
 }
