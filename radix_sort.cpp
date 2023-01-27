@@ -73,11 +73,19 @@ public:
     template <typename Iterator>
     std::vector<T> operator()(Iterator begin, Iterator end)
     {
+        // To limit copying, two temporaries repeatedly swap roles.
+        // Is it possible to further reduce copying?
         std::vector<T> copy(begin, end);
         auto const size{copy.size()};
-        temp.resize(size);
-        helper(&copy[0], size, get_power(get_max_digits(copy.begin(), copy.end())));
-        return copy;
+        if (size < 2)
+            return copy;
+        std::vector<T> temp(size);
+        auto const max_digits = get_max_digits(copy.begin(), copy.end());
+        helper(&copy[0], &temp[0], size, get_power(max_digits));
+
+        // max_digits determines recursion depth, determines number
+        // of times data and temp have swapped.
+        return (max_digits & 1) ? copy : temp;
     }
 
 private:
@@ -121,51 +129,63 @@ private:
 
     std::vector<T> temp;
 
-    void helper(T* data, size_t size, T power)
+    void helper(
+        T* data,
+        T* temp,
+        size_t size,
+        T power)
     {
-        if (size < 2 || power < 1)
-            return;
-
-        using array = std::array<size_t, Base>;
-
-        array positions{};
-        array counts{};
-        size_t i{};
-        size_t position{};
-
-        // count them
-        for (i = 0; i < size; ++i)
-            counts[get_digit(data[i], power)] += 1;
-
-        // compute range starts
-        for (i = 0; i < Base; ++i)
+        if (size >= 2 && power >= 1)
         {
-            positions[i] = position;
-            position += counts[i];
-        }
+            using array = std::array<size_t, Base>;
 
-        {
-            auto current_position = positions;
+            array positions{};
+            array counts{};
+            size_t i{};
+            size_t position{};
 
-            // place them in ranges
+            // count them
             for (i = 0; i < size; ++i)
+                counts[get_digit(data[i], power)] += 1;
+
+            // compute range starts
+            for (i = 0; i < Base; ++i)
             {
-                const T d = data[i];
-                const T digit = get_digit(d, power);
-                temp[current_position[digit]] = d;
-                current_position[digit] += 1;
+                positions[i] = position;
+                position += counts[i];
+            }
+
+            {
+                auto current_position = positions;
+
+                // place them in ranges
+                for (i = 0; i < size; ++i)
+                {
+                    const T d = data[i];
+                    const T digit = get_digit(d, power);
+                    temp[current_position[digit]] = d;
+                    current_position[digit] += 1;
+                }
+            }
+
+            // temp is now partially sorted (more than data)
+            // swap temp and data
+            // sort ranges
+
+            if (power > 1)
+            {
+                for (i = 0; i < Base; ++i)
+                {
+                    auto const offset = positions[i];
+                    helper(temp + offset, data + offset, counts[i], power / Base);
+                }
             }
         }
-
-        // TODO: Reduce copying by swapping data and temp. oscillating.
-        std::copy(temp.begin(), temp.begin() + size, data);
-
-        if (power == 1)
-            return;
-
-        // sort ranges
-        for (i = 0; i < Base; ++i)
-            helper(&data[positions[i]], counts[i], power / Base);
+        else
+        {
+            // TODO: Can this be eliminated?
+            std::copy(data, data + size, temp);
+        }
     }
     
     friend int main();
