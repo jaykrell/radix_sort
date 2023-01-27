@@ -1,3 +1,56 @@
+//
+// radix_sort.cpp
+//
+// See https://en.wikipedia.org/wiki/Radix_sort
+//
+// This is original work by Jay Krell (jay.krell@cornell.edu),
+// though many hints were provided and Wikipedia consulted.
+// It was an intellectual exercise. Whether radix sort is actually
+// useful, I do not know yet.
+//
+// Radix as in "base", base 10 is decimal, base 2 is binary.
+// base 16 is hexadecimal, etc.
+//
+// "Decimal point" is more generally "radix point" such
+// as in fixed point numbers. Digits to the left of a radix
+// point are raised to positive powers of the base or radix, starting
+// at 0, and numbers to the right of radix point are raised
+// to negative powers. 0.1 binary is one half.
+//
+// While it maybe confusing, numbers can be represented in any base.
+// At least integers 2 and higher, maybe more generally.
+//
+// Base 10 comes naturally to humans counting on fingers.
+// Time is in base 60. 1 hour is 60 minutes.
+// 1:00 is to base 60 as "100" or "60" is to base 10.
+//
+// Base 2 is natural in computers because of how transistors work.
+// Base 16 is essentially a shorthand for base.
+// Base64 is used to encode "binary" files as text, using
+// "digits" a through z, A through Z, 0 through 9 and a few more.
+//
+// All that being said, the idea of radix sort is to partition
+// values one digit at a time. Any base can be used.
+// Into "buckets".
+//
+// First the size of each partition is computed, by running
+// through the data divide/modding by a power of the base.
+// For example the number 1234 is split into 1, 2, 3, 4.
+//
+// Temporary storage commeasure to the input/output is used.
+// The sort is stable. Equivalent values are kept in the original order.
+//
+// Given bucket sizes, implies starting positions of each partition
+// in the combined output, or the temporary storage.
+// The first bucket is at offset 0, the second is at the offset
+// the size of the first bucket, etc.
+//
+// So given starting positions, the input is copied into temporary storage.
+// A partial sort by one digit is therefore established.
+//
+// Each bucket is then sorted in the same way, using the next digit.
+// The current implementation is recursive and serial.
+//
 #include <array>
 #include <ctype.h>
 #include <algorithm>
