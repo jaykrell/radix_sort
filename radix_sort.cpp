@@ -198,7 +198,7 @@ private:
             // Copy is needed if size==1 an odd number of times before the maximum recursion.
             // That is, we could recurse till max_digits == 0, but that would only
             // move elements back and forth between data and temp. Instead, do one
-            // last move and stop recursing. Well, odd vs. even is empirically derived,
+            // last copy and stop recursing. Well, odd vs. even is empirically derived,
             // to fix off by one.
             if (!(max_digits & 1))
                 std::copy(data, data + size, temp);
