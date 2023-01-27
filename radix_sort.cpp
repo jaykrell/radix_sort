@@ -193,7 +193,7 @@ void check(Iterator begin, Iterator end)
     {
         if (it != begin)
         {
-            if (!(*previous <= *it))
+            if (!(*previous++ <= *it))
             {
                 verbose(begin, end, false);
                 return;
