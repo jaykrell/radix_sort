@@ -53,6 +53,9 @@
 // The current implementation is recursive and serial.
 // Two temporaries can be swapped repeatedly to limit copying.
 // Perhaps copying can be further reduced.
+// Making it non-recursive, without mere queuing, was attempted
+// but appears difficult or impossible. Of course, queueing is easy enough.
+// There is a sort of "arbitrary fan out" or tree to the recursion.
 //
 // One progression would be:
 //  22 23 21  32 33 31  12 13 11 original input with ups and downs in both digits.
