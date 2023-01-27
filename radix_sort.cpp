@@ -8,7 +8,7 @@
 // It was an intellectual exercise. Whether radix sort is actually
 // useful, I do not know yet.
 //
-// Radix as in "base", base 10 is decimal, base 2 is binary.
+// Radix is also known as "base", base 10 is decimal, base 2 is binary.
 // base 16 is hexadecimal, etc.
 //
 // "Decimal point" is more generally "radix point" such
@@ -37,7 +37,7 @@
 // through the data divide/modding by a power of the base.
 // For example the number 1234 is split into 1, 2, 3, 4.
 //
-// Temporary storage commeasure to the input/output is used.
+// Temporary storage comeasurate to the input/output is used.
 // The sort is stable. Equivalent values are kept in the original order.
 //
 // Given bucket sizes, implies starting positions of each partition
