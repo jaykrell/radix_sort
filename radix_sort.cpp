@@ -96,7 +96,7 @@ private:
             }
         }
 
-        memcpy(data, &temp[0], size * sizeof(T));
+        std::copy(temp.begin(), temp.end(), data);
 
         if (power == 1)
             return;
