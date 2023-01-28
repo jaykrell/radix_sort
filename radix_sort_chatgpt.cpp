@@ -25,7 +25,7 @@
 #include <vector>
 #include <time.h>
 
-template <size_t Base, typename T1, typename T2>
+template <uint64_t Base, typename T1, typename T2>
 static size_t get_digit(T1 value, T2 power)
 {
     return (value / power) % Base;
@@ -33,25 +33,15 @@ static size_t get_digit(T1 value, T2 power)
 
 template <size_t Base, typename Iterator, typename T>
 static void
-counting_sort(Iterator begin, Iterator end, size_t exp, T const & /* deduction helper */)
+counting_sort(Iterator begin, Iterator end, size_t size, uint64_t exp, T const & /* deduction helper */)
 {
-    if (begin == end)
-        return;
-
     using array = std::array<size_t, Base>;
     array counts{};
     size_t i{};
-    size_t size{};
 
-    // Count them, by digit and overall.
+    // Count them, by digit.
     for (auto it{begin}; it != end; ++it)
-    {
         counts[get_digit<Base>(*it, exp)] += 1;
-        ++size;
-    }
-
-    if (size < 2)
-        return;
 
     std::vector<T> temp(size);
 
@@ -77,27 +67,18 @@ radix_sort(Iterator begin, Iterator end)
     if (begin == end)
         return;
 
-    // TODO: std::accumulate
-    auto max = *begin;
     size_t size{};
-    for (auto it{begin}; it != end; ++it)
-    {
-        max = std::max(max, *it);
-        ++size;
-    }
+    auto max = std::accumulate(begin, end, *begin, [&](auto a, auto b) { ++size; return std::max(a,b);});
+    assert(size == (end - begin));
 
     if (size < 2)
         return;
 
-    int64_t exp = 1;
+    uint64_t exp = 1;
 
-    // ChatGPT said: while ((max / exp) > 0)
-                     while (max >= exp) // :JayKrell changed to
-    // These are the same, at least for positive numbers.
-    // If we fix for negative numbers, revisit.
-    // Notice that ChatGPT did not accept < 0, and it does not presently work.
+    while ((max / exp) > 0)
     {
-        counting_sort<Base>(begin, end, exp, *begin);
+        counting_sort<Base>(begin, end, size, exp, *begin);
         exp *= Base;
     }
 }

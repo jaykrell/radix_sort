@@ -106,6 +106,9 @@
 #include <array>
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
+#include <numeric>
+#include <random>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -128,11 +131,12 @@
 //
 #include "radix_sort_chatgpt.cpp"
 
-template <typename T, size_t Base>
+template <typename T, int64_t Base>
 class RadixSorter
 {
 public:
     bool chatGpt = false;
+    bool handleNegativeNumbers = false;
 
     template <typename Iterator>
     std::vector<T> operator()(Iterator begin, Iterator end)
@@ -150,8 +154,27 @@ public:
             auto const size{copy.size()};
             if (size < 2)
                 return copy;
+
             std::vector<T> temp(size);
-            int64_t const max_digits = get_max_digits(copy.begin(), copy.end());
+
+            T max = std::accumulate(copy.begin(), copy.end(), copy[0], [](T a, T b) { return std::max(a,b);});
+
+            if (handleNegativeNumbers)
+            {
+                // Negative numbers require some work.
+                // The model is roughly to double base.
+                // Positive numbers get a biased by base mod.
+                // There might be a better way, like if the numbers are -99..999
+                // and max digits is 2 for negative and 3 for positive.
+                T min = std::accumulate(copy.begin(), copy.end(), copy[0], [](T a, T b) { return std::min(a,b);});
+                int64_t max_digits = std::max(get_digits(min), get_digits(max));
+                helper(&copy[0], &temp[0], size, max_digits, get_power(max_digits));
+
+                // max_digits determines recursion depth, determines number
+                // of times data and temp have swapped.
+                return (max_digits & 1) ? copy : temp;
+            }
+            int64_t max_digits = get_digits(max);
             helper(&copy[0], &temp[0], size, max_digits, get_power(max_digits));
 
             // max_digits determines recursion depth, determines number
@@ -164,31 +187,35 @@ private:
 
     static unsigned get_digits(T value)
     {
+        // Return log(magnitude(value), Base)
+        //
+        // -99 => 2
+        //  -1 => 1
+        //   0 => 1
+        //  99 => 2
+        // Caller inevitably has to special case negative numbers.
         unsigned digits{1};
+
+        if (value < 0)
+        {
+            if (value > -Base)
+                return 1;
+
+            // Avoid negating the most negative value, since it will overflow.
+            // Divide first. The result cannot be the most negative value.
+            // Base cannot be 1.
+            value /= Base;
+            value *= -1;
+            ++digits;
+        }
+
         while (value >= Base)
         {
             value /= Base;
             ++digits;
         }
-        return digits;
-    }
 
-    template <typename Iterator>
-    static int64_t get_max_digits(Iterator begin, Iterator end) // log
-    {
-#if 0 // Pre-ChatGPT.
-        // TODO: There is a nicer way, e.g. std::accumulate
-        unsigned value{1};
-        for (auto it{begin}; it != end; ++it)
-            value = std::max(value, get_digits(*it));
-        return value;
-#else // Post-ChatGPT
-        // TODO: Still: std::accumulate?
-        auto max = *begin;
-        for (auto it{begin}; it != end; ++it)
-            max = std::max(max, *it);
-        return get_digits(max);
-#endif
+        return digits;
     }
 
     static int64_t get_power(unsigned n)
@@ -202,12 +229,14 @@ private:
         return value;
     }
 
-    static T get_digit(T value, int64_t power)
+    T get_digit(T value, int64_t power)
     {
+        if (handleNegativeNumbers)
+            return (value < 0) ? (Base - ((value / -power) % Base)) : (Base + ((value / power) % Base));
         return (value / power) % Base;
     }
 
-    static void helper(
+    void helper(
         T* data,
         T* temp,
         size_t size,
@@ -216,7 +245,7 @@ private:
     {
         if (size >= 2 && power >= 1)
         {
-            using array = std::array<size_t, Base>;
+            using array = std::array<size_t, Base * 2>;
 
             array positions{};
             array counts{};
@@ -228,7 +257,7 @@ private:
                 counts[get_digit(data[i], power)] += 1;
 
             // compute range starts
-            for (i = 0; i < Base; ++i)
+            for (i = 0; i < Base * 2; ++i)
             {
                 positions[i] = position;
                 position += counts[i];
@@ -240,7 +269,7 @@ private:
                 // place them in ranges
                 for (i = 0; i < size; ++i)
                 {
-                    const T d = data[i];
+                    const T& d = data[i];
                     const T digit = get_digit(d, power);
                     temp[current_position[digit]] = d;
                     current_position[digit] += 1;
@@ -253,9 +282,10 @@ private:
 
             if (power > 1)
             {
-                for (i = 0; i < Base; ++i)
+                for (i = 0; i < Base * 2; ++i)
                 {
                     auto const offset = positions[i];
+                    // Recursive depth is limited by log of the largest magintude data.
                     helper(temp + offset, data + offset, counts[i], max_digits - 1, power / Base);
                 }
             }
@@ -276,7 +306,7 @@ private:
     friend int main(int argc, char** argv);;
 };
 
-template <typename T, size_t Base>
+template <typename T, int64_t Base>
 class TestRadixSorter : public RadixSorter<T, Base>
 {
 public:
@@ -356,6 +386,7 @@ int main(int argc, char** argv)
 {
     bool chatGpt = false;
     bool benchmark = false;
+    bool handleNegativeNumbers = false;
     uint64_t benchmark_size = 999999;
 
     while (*++argv)
@@ -366,6 +397,8 @@ int main(int argc, char** argv)
             chatGpt = false;
         else if (strcmp(*argv, "benchmark") == 0)
             benchmark = true;
+        else if (strcmp(*argv, "handlenegativenumbers") == 0)
+            handleNegativeNumbers = true;
         else if (strcmp(*argv, "benchmark_size") == 0 && argv[1])
         {
             uint64_t max = std::numeric_limits<uint64_t>::max();
@@ -393,25 +426,74 @@ int main(int argc, char** argv)
         }
     }
 
+    if (chatGpt)
+    {
+        if (handleNegativeNumbers)
+        {
+            printf("chatGpt:handleNegativeNumbers = false");
+            handleNegativeNumbers = false;
+        }
+    }
+
     if (benchmark)
     {
         Benchmark(benchmark_size);
         return 0;
     }
 
+
+    {
+        int data[] = {-9,-4,4,2,0};
+        int min = std::accumulate(data, std::end(data), data[0], [](int a, int b) { return std::min(a,b);});
+        int max = std::accumulate(data, std::end(data), data[0], [](int a, int b) { return std::max(a,b);});
+        assert(min == -9);
+        assert(max == 4);
+    }
+
     {
         constexpr int Base{10};
         RadixSorter<int, Base> sort;
-        assert(sort.get_digit(1234, 1) == 4);
-        assert(sort.get_digit(1234, 10) == 3);
-        assert(sort.get_digit(1234, 100) == 2);
-        assert(sort.get_digit(1234, 1000) == 1);
-        assert(sort.get_digit(1234, 10000) == 0);
+        if (sort.handleNegativeNumbers)
+        {
+            assert(sort.get_digit(1234, 1) == Base + 4);
+            assert(sort.get_digit(1234, 10) == Base + 3);
+            assert(sort.get_digit(1234, 100) == Base + 2);
+            assert(sort.get_digit(1234, 1000) == Base + 1);
+            assert(sort.get_digit(1234, 10000) == Base + 0);
+            assert(sort.get_digit(0, 1) == Base);
+            assert(sort.get_digit(0, 10) == Base);
+            assert(sort.get_digit(0, 100) == Base);
+            assert(sort.get_digit(0, 1000) == Base);
+            assert(sort.get_digit(-1234, 1) == Base - 4);
+            assert(sort.get_digit(-1234, 10) == Base - 3);
+            assert(sort.get_digit(-1234, 100) == Base - 2);
+            assert(sort.get_digit(-1234, 1000) == Base - 1);
+            assert(sort.get_digit(-9234, 1000) == Base - 9);
+            assert(sort.get_digit(-1234, 10000) == Base - 0);
+        }
+        else
+        {
+            assert(sort.get_digit(1234, 1) == 4);
+            assert(sort.get_digit(1234, 10) == 3);
+            assert(sort.get_digit(1234, 100) == 2);
+            assert(sort.get_digit(1234, 1000) == 1);
+            assert(sort.get_digit(1234, 10000) == 0);
+            assert(sort.get_digit(0, 1) == 0);
+            assert(sort.get_digit(0, 10) == 0);
+            assert(sort.get_digit(0, 100) == 0);
+            assert(sort.get_digit(0, 1000) == 0);
+        }
 
         assert(sort.get_digits(4) == 1);
         assert(sort.get_digits(34) == 2);
         assert(sort.get_digits(234) == 3);
         assert(sort.get_digits(1234) == 4);
+
+        assert(sort.get_digits(0) == 1);
+        assert(sort.get_digits(-4) == 1);
+        assert(sort.get_digits(-34) == 2);
+        assert(sort.get_digits(-234) == 3);
+        assert(sort.get_digits(-1234) == 4);
     }
 
     { // ChatGPT fork.
@@ -425,6 +507,7 @@ int main(int argc, char** argv)
     constexpr int Base{10};
     TestRadixSorter<int, Base> test_sort;
     test_sort.chatGpt = chatGpt;
+    test_sort.handleNegativeNumbers = handleNegativeNumbers;
 
     for (int reverse = 0; reverse <= 1; ++reverse)
     {
@@ -495,10 +578,11 @@ int main(int argc, char** argv)
             test_sort(reverse, data.begin(), data.end());
         }
 
+        if (!chatGpt && test_sort.handleNegativeNumbers)
         {
             printf("\nline:%d\n", __LINE__);
             std::vector<int> data{9,-8,7,-1,2,-3,1000,-100,1234,-5678,1234,-5678};
-            //test_sort(reverse, data.begin(), data.end());
+            test_sort(reverse, data.begin(), data.end());
         }
 
         {
@@ -517,14 +601,12 @@ int main(int argc, char** argv)
         // For example in base 4, the value 64 cannot represent
         // lower case letters, but the next value
         // is 256 which overflows unsigned char to zero.
-        //
-        // Presently chatGpt's version does better here.
-
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 2;
             TestRadixSorter<short, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -535,6 +617,7 @@ int main(int argc, char** argv)
             constexpr int Base = 3;
             TestRadixSorter<short, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -545,6 +628,7 @@ int main(int argc, char** argv)
             constexpr int Base = 8;
             TestRadixSorter<short, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -555,6 +639,7 @@ int main(int argc, char** argv)
             constexpr int Base = 9;
             TestRadixSorter<short, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -565,6 +650,7 @@ int main(int argc, char** argv)
             constexpr int Base = 10;
             TestRadixSorter<short, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -575,6 +661,7 @@ int main(int argc, char** argv)
             constexpr int Base = 2;
             TestRadixSorter<unsigned char, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             unsigned char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -585,6 +672,7 @@ int main(int argc, char** argv)
             constexpr int Base = 3;
             TestRadixSorter<unsigned char, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             unsigned char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -595,6 +683,7 @@ int main(int argc, char** argv)
             constexpr int Base = 8;
             TestRadixSorter<unsigned char, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             unsigned char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -605,6 +694,7 @@ int main(int argc, char** argv)
             constexpr int Base = 9;
             TestRadixSorter<unsigned char, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             unsigned char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -615,72 +705,92 @@ int main(int argc, char** argv)
             constexpr int Base = 10;
             TestRadixSorter<unsigned char, Base> test_sort;
             test_sort.chatGpt = chatGpt;
+            test_sort.handleNegativeNumbers = handleNegativeNumbers;
             unsigned char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
         }
 
-        srand(static_cast<unsigned>(time(0)));
+        // StackOverflow for random number generation.
+        // ChatGPT code does not handle negative numbers
+        using T = int32_t; // TODO: int64_t and uint64_t should work
+        std::random_device dev;
+        std::mt19937 engine(dev());
+        std::uniform_int_distribution<T> distribution(
+            handleNegativeNumbers ? std::numeric_limits<T>::min() : 0,
+            std::numeric_limits<T>::max());
 
         // random data
         printf("\nline:%d\n", __LINE__);
-        for (int size = 0; size < 999; ++size)
+        for (int size = 2; size < 999; ++size)
         {
-            int data[999]{};
+            T data[999]{};
             for (int index = 0; index < size; ++index)
-                data[index] = (0x7fffffff & rand());
+            {
+                data[index] = distribution(engine);
+                assert(handleNegativeNumbers || data[index] >= 0);
+            }
 
             {
-                TestRadixSorter<int, 2> test_sort;
+                TestRadixSorter<T, 2> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 3> test_sort;
+                TestRadixSorter<T, 3> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 4> test_sort;
+                TestRadixSorter<T, 4> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 5> test_sort;
+                TestRadixSorter<T, 5> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 10> test_sort;
+                TestRadixSorter<T, 10> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 16> test_sort;
+                TestRadixSorter<T, 16> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 20> test_sort;
+                TestRadixSorter<T, 20> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 100> test_sort;
+                TestRadixSorter<T, 100> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
 
             {
-                TestRadixSorter<int, 256> test_sort;
+                TestRadixSorter<T, 256> test_sort;
                 test_sort.chatGpt = chatGpt;
+                test_sort.handleNegativeNumbers = handleNegativeNumbers;
                 test_sort(reverse, data, &data[size]);
             }
         }
