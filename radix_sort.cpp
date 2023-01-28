@@ -570,7 +570,6 @@ int main(int argc, char** argv)
             assert(sorted.size() == 7);
         }
 
-        if (chatGpt)
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 2;
@@ -581,7 +580,6 @@ int main(int argc, char** argv)
             assert(sorted.size() == 7);
         }
 
-        if (chatGpt)
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 3;
