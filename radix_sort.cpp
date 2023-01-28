@@ -126,8 +126,8 @@
 // and base is complex and some combinations do not work,
 // e.g. divide by zero.
 //
-// TODO: Also, negative numbers do not work.
-// This class is stateless, so a template function suffices.
+// Negative numbers support is experimental/optional.
+// This class could be stateless and a template function would suffice.
 //
 #include "radix_sort_chatgpt.cpp"
 
