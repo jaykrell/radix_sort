@@ -292,7 +292,7 @@ public:
     {
         auto ToChar = [](int a)
         {
-            return isprint(a) ? a : '?';
+            return (a > 0 && a < 128 && isprint(a)) ? a : '?';
         };
 
         if (!success) printf("%s\n", success ? "success" : "failed");
