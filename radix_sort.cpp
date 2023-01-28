@@ -429,10 +429,8 @@ int main(int argc, char** argv)
 
         {
             printf("\nline:%d\n", __LINE__);
-            //std::vector<int> data{9,-8,7,-1,2,-3,1000,-100,1234,-5678,1234,-5678};
-            //auto sorted = test_sort(reverse, data.begin(), data.end());
-            //verbose(sorted.begin(), sorted.end());
-            //check(sorted.begin(), sorted.end());
+            std::vector<int> data{9,-8,7,-1,2,-3,1000,-100,1234,-5678,1234,-5678};
+            //test_sort(reverse, data.begin(), data.end());
         }
 
         {
