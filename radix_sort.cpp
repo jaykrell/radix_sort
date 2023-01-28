@@ -97,6 +97,9 @@
 // ChatGPT computes max and then loops like max > exp.
 // This suggests, at least, I should compute log(max) instead of max(log).
 //
+// ChatGPT handles more type/value combinations correctly.
+// Is mine fixable?
+//
 // --------------------------------------------------------------------------
 //
 #include <array>
@@ -116,25 +119,38 @@
 // TODO: Also, negative numbers do not work.
 // This class is stateless, so a template function suffices.
 //
+#include "radix_sort_chatgpt.cpp"
+
 template <typename T, size_t Base>
 class RadixSorter
 {
 public:
+    bool chatGpt = false;
+
     template <typename Iterator>
     std::vector<T> operator()(Iterator begin, Iterator end)
     {
-        // To limit copying, two temporaries repeatedly swap roles.
         std::vector<T> copy(begin, end);
-        auto const size{copy.size()};
-        if (size < 2)
-            return copy;
-        std::vector<T> temp(size);
-        auto const max_digits = get_max_digits(copy.begin(), copy.end());
-        helper(&copy[0], &temp[0], size, max_digits, get_power(max_digits));
 
-        // max_digits determines recursion depth, determines number
-        // of times data and temp have swapped.
-        return (max_digits & 1) ? copy : temp;
+        if (chatGpt)
+        {
+            radix_sort<Base>(copy.begin(), copy.end());
+            return copy;
+        }
+        else
+        {
+            // To limit copying, two temporaries repeatedly swap roles.
+            auto const size{copy.size()};
+            if (size < 2)
+                return copy;
+            std::vector<T> temp(size);
+            auto const max_digits = get_max_digits(copy.begin(), copy.end());
+            helper(&copy[0], &temp[0], size, max_digits, get_power(max_digits));
+
+            // max_digits determines recursion depth, determines number
+            // of times data and temp have swapped.
+            return (max_digits & 1) ? copy : temp;
+        }
     }
 
 private:
@@ -250,11 +266,11 @@ private:
         }
     }
     
-    friend int main();
+    friend int main(int argc, char** argv);;
 };
 
 template <typename T, size_t Base>
-class TestRadixSorter : RadixSorter<T, Base>
+class TestRadixSorter : public RadixSorter<T, Base>
 {
 public:
     template <typename Iterator>
@@ -303,8 +319,18 @@ public:
     }
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    bool chatGpt = false;
+
+    while (*++argv)
+    {
+        if (strcmp(*argv, "chatgpt") == 0)
+            chatGpt = true;
+        else if (strcmp(*argv, "nochatgpt") == 0)
+            chatGpt = false;
+    }
+
     {
         constexpr int Base{10};
         RadixSorter<int, Base> sort;
@@ -320,8 +346,17 @@ int main()
         assert(sort.get_digits(1234) == 4);
     }
 
+    { // ChatGPT fork.
+        assert(get_digit<10>(1234, 1) == 4);
+        assert(get_digit<10>(1234, 10) == 3);
+        assert(get_digit<10>(1234, 100) == 2);
+        assert(get_digit<10>(1234, 1000) == 1);
+        assert(get_digit<10>(1234, 10000) == 0);
+    }
+
     constexpr int Base{10};
     TestRadixSorter<int, Base> test_sort;
+    test_sort.chatGpt = chatGpt;
 
     for (int reverse = 0; reverse <= 1; ++reverse)
     {
@@ -416,11 +451,14 @@ int main()
         // For example in base 4, the value 64 cannot represent
         // lower case letters, but the next value
         // is 256 which overflows unsigned char to zero.
+        //
+        // Presently chatGpt's version does better here.
 
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 2;
             TestRadixSorter<short, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -430,6 +468,7 @@ int main()
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 3;
             TestRadixSorter<short, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -439,6 +478,7 @@ int main()
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 8;
             TestRadixSorter<short, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -448,6 +488,7 @@ int main()
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 9;
             TestRadixSorter<short, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -457,6 +498,7 @@ int main()
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 10;
             TestRadixSorter<short, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
             char data[] = "foobar";
             auto const sorted = test_sort(reverse, data, std::end(data));
             assert(sorted.size() == 7);
@@ -472,15 +514,60 @@ int main()
             for (int index = 0; index < size; ++index)
                 data[index] = (0x7fffffff & rand());
 
-            TestRadixSorter<int, 2>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 3>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 4>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 5>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 10>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 16>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 20>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 100>()(reverse, data, &data[size]);
-            TestRadixSorter<int, 256>()(reverse, data, &data[size]);
+            {
+                TestRadixSorter<int, 2> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 3> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 4> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 5> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 10> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 16> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 20> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 100> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
+
+            {
+                TestRadixSorter<int, 256> test_sort;
+                test_sort.chatGpt = chatGpt;
+                test_sort(reverse, data, &data[size]);
+            }
         }
     }
+    printf("\nsuccess chatgpt:%d\n", (int)chatGpt);
 }
