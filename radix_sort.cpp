@@ -328,23 +328,24 @@ public:
 
 void Benchmark(size_t size)
 {
+    std::vector<unsigned> orig(size, 0);
     std::vector<unsigned> data(size, 0);
 
     for (size_t i = 0; i < size; ++i)
-        data[i] = (0x7fffffff & rand());
-
-    std::vector<unsigned> data2 = data;
+        orig[i] = (0xffffffff & rand());
 
     TestRadixSorter<unsigned, 16> test_sort;
 
+    data = orig;
     time_t start_ChatGpt = time(0);
     test_sort.chatGpt = true;
     test_sort(false, &data[0], &data[size]);
     time_t end_ChatGpt = time(0);
 
+    data = orig;
     time_t start_NoChatGpt = time(0);
     test_sort.chatGpt = false;
-    test_sort(false, &data2[0], &data2[size]);
+    test_sort(false, &data[0], &data[size]);
     time_t end_NoChatGpt = time(0);
 
     printf("noChatGpt:%d\n", (int)(end_NoChatGpt - start_NoChatGpt));
