@@ -102,13 +102,20 @@
 //
 // --------------------------------------------------------------------------
 //
-#include <array>
-#include <ctype.h>
 #include <algorithm>
+#include <array>
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
-#include <vector>
+#include <string.h>
 #include <time.h>
+#include <vector>
+#if _WIN32
+#define NOMINMAX
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 // T is type for temporary and sorted output data.
 // The input data can be a different type.
@@ -319,9 +326,36 @@ public:
     }
 };
 
+void Benchmark(size_t size)
+{
+    std::vector<unsigned> data(size, 0);
+
+    for (size_t i = 0; i < size; ++i)
+        data[i] = (0x7fffffff & rand());
+
+    std::vector<unsigned> data2 = data;
+
+    TestRadixSorter<unsigned, 16> test_sort;
+
+    time_t start_ChatGpt = time(0);
+    test_sort.chatGpt = true;
+    test_sort(false, &data[0], &data[size]);
+    time_t end_ChatGpt = time(0);
+
+    time_t start_NoChatGpt = time(0);
+    test_sort.chatGpt = false;
+    test_sort(false, &data2[0], &data2[size]);
+    time_t end_NoChatGpt = time(0);
+
+    printf("noChatGpt:%d\n", (int)(end_NoChatGpt - start_NoChatGpt));
+    printf("chatGpt:%d\n",   (int)(end_ChatGpt - start_ChatGpt));
+}
+
 int main(int argc, char** argv)
 {
     bool chatGpt = false;
+    bool benchmark = false;
+    uint64_t benchmark_size = 999999;
 
     while (*++argv)
     {
@@ -329,6 +363,39 @@ int main(int argc, char** argv)
             chatGpt = true;
         else if (strcmp(*argv, "nochatgpt") == 0)
             chatGpt = false;
+        else if (strcmp(*argv, "benchmark") == 0)
+            benchmark = true;
+        else if (strcmp(*argv, "benchmark_size") == 0 && argv[1])
+        {
+            uint64_t max = std::numeric_limits<uint64_t>::max();
+            const char* s = argv[1];
+            benchmark_size = 0;
+            while (*s)
+            {
+                if (benchmark_size > (max / 10))
+                {
+                    printf("overflow\n");
+                    exit(1);
+                }
+                benchmark_size *= 10;
+                uint64_t digit = (*s - '0');
+                if (benchmark_size > (max - digit))
+                {
+                    printf("overflow\n");
+                    exit(1);
+                }
+                benchmark_size += digit;
+                ++s;
+            }
+            assert(benchmark_size <= std::numeric_limits<size_t>::max());
+            ++argv;
+        }
+    }
+
+    if (benchmark)
+    {
+        Benchmark(benchmark_size);
+        return 0;
     }
 
     {
