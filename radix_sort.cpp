@@ -504,6 +504,61 @@ int main(int argc, char** argv)
             assert(sorted.size() == 7);
         }
 
+        if (chatGpt)
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 2;
+            TestRadixSorter<unsigned char, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
+            unsigned char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        if (chatGpt)
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 3;
+            TestRadixSorter<unsigned char, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
+            unsigned char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        if (chatGpt)
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 8;
+            TestRadixSorter<unsigned char, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
+            unsigned char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        if (chatGpt)
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 9;
+            TestRadixSorter<unsigned char, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
+            unsigned char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
+        if (chatGpt)
+        {
+            printf("\nline:%d\n", __LINE__);
+            constexpr int Base = 10;
+            TestRadixSorter<unsigned char, Base> test_sort;
+            test_sort.chatGpt = chatGpt;
+            unsigned char data[] = "foobar";
+            auto const sorted = test_sort(reverse, data, std::end(data));
+            assert(sorted.size() == 7);
+        }
+
         srand(static_cast<unsigned>(time(0)));
 
         // random data
