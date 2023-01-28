@@ -328,13 +328,13 @@ public:
 
 void Benchmark(size_t size)
 {
-    std::vector<unsigned> orig(size, 0);
-    std::vector<unsigned> data(size, 0);
+    std::vector<int> orig(size, 0);
+    std::vector<int> data(size, 0);
 
     for (size_t i = 0; i < size; ++i)
-        orig[i] = (0xffffffff & rand());
+        orig[i] = (0x7fffffff & rand());
 
-    TestRadixSorter<unsigned, 16> test_sort;
+    TestRadixSorter<int, 16> test_sort;
 
     data = orig;
     time_t start_ChatGpt = time(0);
