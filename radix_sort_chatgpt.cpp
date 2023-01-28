@@ -89,7 +89,7 @@ radix_sort(Iterator begin, Iterator end)
     if (size < 2)
         return;
 
-    size_t exp = 1;
+    int64_t exp = 1;
 
     // ChatGPT said: while ((max / exp) > 0)
                      while (max >= exp) // :JayKrell changed to

@@ -151,7 +151,7 @@ public:
             if (size < 2)
                 return copy;
             std::vector<T> temp(size);
-            auto const max_digits = get_max_digits(copy.begin(), copy.end());
+            int64_t const max_digits = get_max_digits(copy.begin(), copy.end());
             helper(&copy[0], &temp[0], size, max_digits, get_power(max_digits));
 
             // max_digits determines recursion depth, determines number
@@ -174,7 +174,7 @@ private:
     }
 
     template <typename Iterator>
-    static unsigned get_max_digits(Iterator begin, Iterator end) // log
+    static int64_t get_max_digits(Iterator begin, Iterator end) // log
     {
 #if 0 // Pre-ChatGPT.
         // TODO: There is a nicer way, e.g. std::accumulate
@@ -191,9 +191,9 @@ private:
 #endif
     }
 
-    static T get_power(unsigned n)
+    static int64_t get_power(unsigned n)
     {
-        T value = 1;
+        int64_t value = 1;
         while (n > 0)
         {
             n -= 1;
@@ -202,7 +202,7 @@ private:
         return value;
     }
 
-    static T get_digit(T value, T power)
+    static T get_digit(T value, int64_t power)
     {
         return (value / power) % Base;
     }
@@ -211,8 +211,8 @@ private:
         T* data,
         T* temp,
         size_t size,
-        unsigned max_digits,
-        T power)
+        int64_t max_digits,
+        int64_t power)
     {
         if (size >= 2 && power >= 1)
         {
@@ -590,7 +590,6 @@ int main(int argc, char** argv)
             assert(sorted.size() == 7);
         }
 
-        if (chatGpt)
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 8;
@@ -601,7 +600,6 @@ int main(int argc, char** argv)
             assert(sorted.size() == 7);
         }
 
-        if (chatGpt)
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 9;
@@ -612,7 +610,6 @@ int main(int argc, char** argv)
             assert(sorted.size() == 7);
         }
 
-        if (chatGpt)
         {
             printf("\nline:%d\n", __LINE__);
             constexpr int Base = 10;
