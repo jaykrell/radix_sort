@@ -6,7 +6,8 @@
 // This is original work by Jay Krell (jay.krell@cornell.edu),
 // though hints were provided and Wikipedia consulted somewhat.
 // It was an intellectual exercise. Whether radix sort is actually
-// useful, I do not know yet.
+// useful, I do not know yet. (One "small" optimization copied from ChatGPT.
+// ChatGPT based solution will be implemented in separate file).
 //
 // Radix is also known as "base", base 10 is decimal, base 2 is binary.
 // base 16 is hexadecimal, etc.
@@ -62,6 +63,42 @@
 //  12 13 11  22 23 21  32 33 31 sorted in first digit
 //  11 12 13  21 22 23  31 32 33 sorted in both digits
 //
+// --------------------------------------------------------------------------
+//
+// ChatGPT has entered the fray and is very good at this, and much faster.
+// It offers a somewhat different solution.
+// ChatGPT's solution is not recursive.
+// ChatGPT's solution does heap allocate and free more often,
+// but has same peak storage, and this aspect is surely fixable.
+// Related? ChatGPT does not use oscillating temporaries.
+// ChatGPT sorts by least significant digit first.
+// ChatGPT sorts the entire array at each iteration.
+// Sorting the entire array is likely required due to
+// least significant digit first.
+//
+// ChatGPT has one array where I have three, which is a simple
+// optimization, and it computes ending positions instead of starting
+// positions, then goes through the array in reverse, decrementing them.
+// This does not seem like a very important difference.
+//
+// I believe at least some of the ideas are compatible.
+// That is, you could use my heap allocation and oscillating temporaries,
+// with ChatGPT's non-recursion, and LSB-first.
+//
+// ChatGPT likely exhibits worse data locality, since it visits the entire array
+// forward and backward, k (max_digits) times. I probably visit the data the same
+// amount, but with better locality.
+//
+// The recursive algorithm only recurses to at most max_digits depth, which
+// does not seem terrible, and analogous to ChatGPT's k loop.
+//
+// ChatGPT writes in Rust instead of C++, which I aspire to.
+// ChatGPT's solution suggests one very simple optimization that fits easily into my code,
+// ChatGPT computes max and then loops like max > exp.
+// This suggests, at least, I should compute log(max) instead of max(log).
+//
+// --------------------------------------------------------------------------
+//
 #include <array>
 #include <ctype.h>
 #include <algorithm>
@@ -116,11 +153,19 @@ private:
     template <typename Iterator>
     static unsigned get_max_digits(Iterator begin, Iterator end) // log
     {
+#if 0 // Pre-ChatGPT.
         // TODO: There is a nicer way, e.g. std::accumulate
         unsigned value{1};
         for (auto it{begin}; it != end; ++it)
             value = std::max(value, get_digits(*it));
         return value;
+#else // Post-ChatGPT
+        // TODO: Still: std::accumulate?
+        auto max = *begin;
+        for (auto it{begin}; it != end; ++it)
+            max = std::max(max, *it);
+        return get_digits(max);
+#endif
     }
 
     static T get_power(unsigned n)
