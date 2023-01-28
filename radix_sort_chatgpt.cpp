@@ -91,7 +91,11 @@ radix_sort(Iterator begin, Iterator end)
 
     size_t exp = 1;
 
-    while ((max / exp) > 0)
+    // ChatGPT said: while ((max / exp) > 0)
+                     while (max >= exp) // :JayKrell changed to
+    // These are the same, at least for positive numbers.
+    // If we fix for negative numbers, revisit.
+    // Notice that ChatGPT did not accept < 0, and it does not presently work.
     {
         counting_sort<Base>(begin, end, exp, *begin);
         exp *= Base;
